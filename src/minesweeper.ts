@@ -1,7 +1,7 @@
 type Visibility = "HIDDEN" | "SHOWN" | "FLAG";
 type Action = "CHECK" | "FLAG";
 type GameState = "ONGOING" | "WON" | "LOST" | "NOT_STARTED";
-type Point = {x: number, y: number}
+export type Point = {x: number, y: number}
 const MINE = -1;
 
 // TODO: needs a lot of refactoring
@@ -19,6 +19,23 @@ function createGrid<T>(width: number, height: number, base: T): Array<Array<T>> 
   return ret;
 }
 
+// class Grid<T> {
+//   private grid: T[][]
+//   private width: number;
+//   private height: number;
+
+//   constructor(width: number, height: number, base: T) {
+//     this.width = width;
+//     this.height = height;
+//     this.grid = createGrid(width, height, base);
+//   }
+// }
+
+export interface TileObserver {
+  update(s: string): void;
+  coords(): Point;
+}
+
 export class MineSweeper {
   width: number;
   height: number;
@@ -29,6 +46,8 @@ export class MineSweeper {
   xSlack: number;
   ySlack: number;
   gameState: GameState;
+  observers: (TileObserver|undefined)[][]
+
 
   constructor(width: number, height:number, numMines:number) {
     this.width = width
@@ -40,6 +59,7 @@ export class MineSweeper {
     this.ySlack = 2;
     this.numVisibleTiles = 0;
     this.gameState = "NOT_STARTED";
+    this.observers = createGrid(width, height, undefined);
   }
 
   reset() {
@@ -47,6 +67,11 @@ export class MineSweeper {
     this.grid = createGrid(this.width, this.height, 0);
     this.numVisibleTiles = 0;
     this.gameState = "NOT_STARTED";
+  }
+
+  register(t: TileObserver) {
+    const coords = t.coords();
+    this.observers[coords.y][coords.x] = t;
   }
 
   private incrementIfNotMine(x: number, y: number) {
@@ -139,6 +164,8 @@ export class MineSweeper {
   private updateVisibility(x: number, y: number) {
     if (this.grid[y][x] === MINE) {
       this.visibleGrid[y][x] = "SHOWN";
+      const tile = this.observers[y][x]
+      tile?.update(this.grid[y][x].toString());
       return;
     }
 
@@ -151,6 +178,8 @@ export class MineSweeper {
       }
 
       this.visibleGrid[p.y][p.x] = "SHOWN";
+      const tile = this.observers[p.y][p.x]
+      tile?.update(this.grid[p.y][p.x].toString());
       this.numVisibleTiles += 1;
     }
   }
@@ -202,10 +231,15 @@ export class MineSweeper {
   private placeFlag(x: number, y: number) {
     if (this.visibleGrid[y][x] === "FLAG") {
       this.visibleGrid[y][x] = "HIDDEN";
+      const tile = this.observers[y][x];
+      tile?.update(" ");
+      return;
     }
 
     if (this.visibleGrid[y][x] === "HIDDEN") {
       this.visibleGrid[y][x] = "FLAG";
+      const tile = this.observers[y][x]
+      tile?.update("F")
     }
 
     // cannot place flag on a shown tile
@@ -213,7 +247,7 @@ export class MineSweeper {
 
   action(x: number, y: number, action: Action) {
     if (action === "CHECK") {
-      if (this.visibleGrid[x][y] === "FLAG") {
+      if (this.visibleGrid[y][x] === "FLAG") {
         return;
       }
       this.check(x, y);
@@ -225,6 +259,10 @@ export class MineSweeper {
   }
 
   check(x: number, y: number) {
+    if (this.gameState === "LOST") {
+      return;
+    }
+    
     if (this.gameState === "NOT_STARTED") {
       this.gameState = "ONGOING";
       this.generateGrid(x, y);
@@ -250,3 +288,5 @@ export class MineSweeper {
     return this.gameState === "WON";
   }
 }
+
+const m = new MineSweeper(10, 10, 3);
