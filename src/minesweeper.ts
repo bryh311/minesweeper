@@ -19,21 +19,276 @@ function createGrid<T>(width: number, height: number, base: T): Array<Array<T>> 
   return ret;
 }
 
-// class Grid<T> {
-//   private grid: T[][]
-//   private width: number;
-//   private height: number;
+class MineGrid {
+  private grid: number[][];
+  private width: number;
+  private height: number;
+  private numMines: number;
 
-//   constructor(width: number, height: number, base: T) {
-//     this.width = width;
-//     this.height = height;
-//     this.grid = createGrid(width, height, base);
-//   }
-// }
+  getHeight() {
+    return this.height;
+  }
+
+  getWidth() {
+    return this.width;
+  }
+
+  getNumMines() {
+    return this.numMines;
+  }
+
+  constructor(width: number, height: number, numMines: number) {
+    this.width = width;
+    this.height = height;
+    this.numMines = numMines;
+
+    this.grid = createGrid(width, height, 0);
+  }
+
+  getMineValueAt(point: Point) {
+    return this.grid[point.y][point.x];
+  }
+
+  generateMines(startingPoint: Point) {
+    const xSlack = 3;
+    const ySlack = 3;
+
+    for (let i = 0; i < this.numMines; i++) {
+      let found = false;
+      while (!found) {
+        found = true;
+        let randX = Math.floor(Math.random() * this.width);
+        let randY = Math.floor(Math.random() * this.height);
+        // let area within ~3 of starting be clear
+        if (Math.abs(randX - startingPoint.x) <= xSlack && Math.abs(randY - startingPoint.y) <= ySlack) {
+          found = false;
+        }
+
+        if (this.grid[randY][randX] === MINE) {
+          found = false;
+        }
+
+        if (found) {
+          // place mine and increment tiles
+          this.placeMine({x: randX, y: randY});
+        }
+      }
+    }
+  }
+
+  private placeMine(point: Point) {
+    this.grid[point.y][point.x] = MINE;
+    if (point.x !== 0) {
+      this.incrementIfNotMine(point.x - 1, point.y);
+      if (point.y !== 0) {
+        this.incrementIfNotMine(point.x - 1, point.y - 1);
+      }
+      if (point.y !== this.height - 1) {
+        this.incrementIfNotMine(point.x - 1, point.y + 1);
+      }
+    }
+    if (point.x !== this.width - 1) {
+      this.incrementIfNotMine(point.x + 1, point.y);
+      if (point.y !== 0) {
+        this.incrementIfNotMine(point.x+1, point.y -1);
+      }
+      if (point.y !== this.height - 1) {
+        this.incrementIfNotMine(point.x + 1, point.y + 1);
+      }
+    }
+    if (point.y !== 0) {
+      this.incrementIfNotMine(point.x, point.y - 1);
+    }
+    if (point.y !== this.height - 1) {
+      this.incrementIfNotMine(point.x, point.y + 1);
+    }
+  }
+
+  private incrementIfNotMine(x: number, y: number) {
+    if (this.grid[y][x] !== MINE) {
+      this.grid[y][x] += 1;
+    }
+  }
+
+  reset() {
+    this.grid = createGrid(this.width, this.height, 0);
+  }
+}
+
+class VisibilityGrid {
+  private grid: Visibility[][];
+  private width: number;
+  private height: number;
+  private shownTiles: number
+
+  getHeight() {
+    return this.height;
+  }
+
+  getWidth() {
+    return this.width;
+  }
+
+  getShownTiles() {
+    return this.shownTiles;
+  }
+
+  constructor(width: number, height: number) {
+    this.width = width;
+    this.height = height;
+    this.shownTiles = 0;
+
+    this.grid = createGrid(width, height, "HIDDEN");
+  }
+
+  setVisibilityAt(point: Point, vis: Visibility): void {
+    const previousVisibilty = this.grid[point.y][point.x];
+    if (vis === "SHOWN" && previousVisibilty !== "SHOWN") {
+      this.shownTiles++;
+    }
+    this.grid[point.y][point.x] = vis;
+  }
+
+  getVisibilityAt(point: Point): Visibility {
+    return this.grid[point.y][point.x];
+  }
+
+  reset() {
+    this.grid = createGrid(this.width, this.height, "HIDDEN");
+    this.shownTiles = 0;
+  }
+}
+
+// class should handle grid ops?
+// what class should handle telling the UI to update?
+// need a better api for the game
+
+// Minesweeper
+// game is won when shown tiles == width*height - num mines
+// game is lost when mine is shown
+// player can
+// 1. reveal tile
+// 2. place flag on hidden space
+// 3. click area with flags and reveal hidden tiles (do this later)
+// need 3 functions for this.
 
 export interface TileObserver {
   update(s: string): void;
   coords(): Point;
+}
+
+class ObserverList {
+  private observers: (TileObserver|undefined)[][];
+  private width: number;
+  private height: number;
+
+  constructor(width: number, height: number) {
+    this.width = width;
+    this.height = height;
+    this.observers = createGrid(width, height, undefined);
+  }
+
+  addObserver(t: TileObserver) {
+    const coords = t.coords();
+    this.observers[coords.y][coords.x] = t;
+  }
+
+  getObserver(p: Point) {
+    return this.observers[p.y][p.x];
+  }
+
+  updateObserver(p: Point, args: string) {
+    const observer = this.observers[p.y][p.x];
+    if (observer !== undefined) {
+      observer.update(args);
+    }
+  }
+}
+
+class CombinedGrid {
+  private mineGrid: MineGrid;
+  private visibilityGrid: VisibilityGrid;
+  private observers: ObserverList;
+
+  getWidth() {
+    return this.mineGrid.getWidth();
+  }
+
+  getHeight() {
+    return this.mineGrid.getHeight();
+  }
+
+  getNumMines() {
+    return this.mineGrid.getNumMines();
+  }
+
+  getNumTiles() {
+    return this.mineGrid.getWidth() * this.mineGrid.getHeight();
+  }
+
+  getShownTiles() {
+    return this.visibilityGrid.getShownTiles();
+  }
+
+  constructor(width: number, height: number, numMines: number) {
+    this.mineGrid = new MineGrid(width, height, numMines);
+    this.visibilityGrid = new VisibilityGrid(width, height);
+    this.observers = new ObserverList(width, height);
+  }
+  
+  updateVisibility(point: Point) {
+    if (this.mineGrid.getMineValueAt(point) === MINE) {
+      this.visibilityGrid.setVisibilityAt(point, "SHOWN");
+      const mineValue = this.mineGrid.getMineValueAt(point).toString();
+      this.observers.updateObserver(point, mineValue);
+      return;
+    }
+
+    const queue = new Array<Point>();
+    queue.push(point);
+    while (queue.length > 0) {
+      const currentPoint = queue.shift()!;
+      if (this.mineGrid.getMineValueAt(currentPoint) === 0) {
+        this.enqueueSurroundings(queue, currentPoint);
+      }
+
+      this.visibilityGrid.setVisibilityAt(currentPoint, "SHOWN");
+      const mineValue = this.mineGrid.getMineValueAt(currentPoint).toString();
+      this.observers.updateObserver(currentPoint, mineValue);
+    }
+  }
+
+  private enqueueSurroundings(queue: Array<Point>, p: Point) {
+    const checkInBoundsAndPushBound = this.checkInBoundsAndPush.bind(this, queue);
+    checkInBoundsAndPushBound({x: p.x - 1, y: p.y - 1});
+    checkInBoundsAndPushBound({x: p.x - 1, y: p.y});
+    checkInBoundsAndPushBound({x: p.x - 1, y: p.y + 1});
+    checkInBoundsAndPushBound({x: p.x, y: p.y - 1});
+    checkInBoundsAndPushBound({x: p.x, y: p.y + 1});
+    checkInBoundsAndPushBound({x: p.x + 1, y: p.y - 1});
+    checkInBoundsAndPushBound({x: p.x + 1, y: p.y});
+    checkInBoundsAndPushBound({x: p.x + 1, y: p.y + 1});
+  }
+
+  private checkInBoundsAndPush(queue: Array<Point>, p: Point) {
+    if (this.isInBounds(p) && this.visibilityGrid.getVisibilityAt(p) === "HIDDEN") {
+      queue.push({x: p.x, y: p.y});
+    }
+  }
+
+  isInBounds(point: Point): boolean {
+    // this might need to be refactored into MineGrid?
+    return !(point.x < 0 || point.x >= this.getWidth() || point.y < 0 || point.y >= this.getHeight());
+  }
+
+  register(t: TileObserver) {
+    this.observers.addObserver(t);
+  }
+
+  reset() {
+    this.mineGrid.reset();
+    this.visibilityGrid.reset();
+  }
 }
 
 export class MineSweeper {
