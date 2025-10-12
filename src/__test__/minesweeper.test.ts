@@ -1,5 +1,11 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import { MineSweeper, PointQueue, VisibilityGrid } from "../minesweeper";
+import { beforeEach, describe, expect, it, vitest } from "vitest";
+import {
+  MineSweeper,
+  ObserverList,
+  PointQueue,
+  VisibilityGrid,
+  type TileObserver,
+} from "../minesweeper";
 
 describe("minesweeper", () => {
   describe("basics", () => {
@@ -90,5 +96,55 @@ describe("PointQueue", () => {
     queue.enqueue(p);
     queue.enqueue(p);
     expect(queue.length()).eq(1);
+  });
+});
+
+describe("ObserverList", () => {
+  let list: ObserverList;
+  let height = 10;
+  let width = 10;
+
+  const createStubTileObserver = (x: number, y: number): TileObserver => {
+    return {
+      coords: () => {
+        return { x: x, y: y };
+      },
+      update: (s: string) => {
+        return s;
+      },
+    };
+  };
+
+  beforeEach(() => {
+    list = new ObserverList(width, height);
+  });
+
+  it("adds an observer", () => {
+    const stubObserver = createStubTileObserver(1, 1);
+    list.addObserver(stubObserver);
+    expect(list.getObserver(stubObserver.coords())).eq(stubObserver);
+  });
+
+  describe("observer calling", () => {
+    let stubObserver: TileObserver;
+    let mockUpdateFunc = vitest.fn();
+
+    beforeEach(() => {
+      mockUpdateFunc.mockReset();
+      stubObserver = createStubTileObserver(1, 1);
+      stubObserver.update = mockUpdateFunc;
+      list.addObserver(stubObserver);
+    });
+
+    it("calls an observer", () => {
+      const args = "aaaa";
+      list.updateObserver(stubObserver.coords(), args);
+      expect(mockUpdateFunc).toBeCalledWith(args);
+    });
+
+    it("resets all observers", () => {
+      list.reset();
+      expect(mockUpdateFunc).toBeCalledWith("");
+    });
   });
 });

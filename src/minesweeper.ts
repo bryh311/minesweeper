@@ -212,7 +212,7 @@ export interface TileObserver {
   coords(): Point;
 }
 
-class ObserverList {
+export class ObserverList {
   private observers: (TileObserver | undefined)[][];
 
   constructor(width: number, height: number) {
@@ -232,6 +232,14 @@ class ObserverList {
     const observer = this.observers[p.y][p.x];
     if (observer !== undefined) {
       observer.update(args);
+    }
+  }
+
+  reset() {
+    for (let i = 0; i < this.observers.length; i++) {
+      for (let j = 0; j < this.observers[i].length; j++) {
+        this.updateObserver({ x: j, y: i }, "");
+      }
     }
   }
 }
@@ -266,7 +274,7 @@ export class PointQueue {
   }
 }
 
-class CombinedGrid {
+export class GridLogic {
   private mineGrid: MineGrid;
   private visibilityGrid: VisibilityGrid;
   private observers: ObserverList;
@@ -382,11 +390,12 @@ class CombinedGrid {
   reset() {
     this.mineGrid.reset();
     this.visibilityGrid.reset();
+    this.observers.reset();
   }
 }
 
 export class MineSweeper {
-  private grid: CombinedGrid;
+  private grid: GridLogic;
   private gameState: GameState;
 
   getGameState(): GameState {
@@ -406,7 +415,7 @@ export class MineSweeper {
   }
 
   constructor(width: number, height: number, numMines: number) {
-    this.grid = new CombinedGrid(width, height, numMines);
+    this.grid = new GridLogic(width, height, numMines);
     this.gameState = "NOT_STARTED";
   }
 
