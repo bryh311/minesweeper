@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { MineSweeper, VisibilityGrid } from "../minesweeper";
+import { MineSweeper, PointQueue, VisibilityGrid } from "../minesweeper";
 
 describe("minesweeper", () => {
   describe("basics", () => {
@@ -61,5 +61,34 @@ describe("VisibilityGrid", () => {
     grid.toggleFlag(p);
     expect(grid.getFlaggedTiles()).eq(0);
     expect(grid.getVisibilityAt(p)).eq("HIDDEN");
+  });
+});
+
+describe("PointQueue", () => {
+  let queue: PointQueue;
+
+  beforeEach(() => {
+    queue = new PointQueue();
+  });
+
+  it("enqueues", () => {
+    let p = { x: 1, y: 1 };
+    queue.enqueue(p);
+    expect(queue.length()).eq(1);
+  });
+
+  it("dequeues", () => {
+    let p = { x: 1, y: 1 };
+    queue.enqueue(p);
+    expect(queue.length()).eq(1);
+    let q = queue.dequeue();
+    expect(q).eq(p);
+  });
+
+  it("doesn't enqueue the same thing twice", () => {
+    let p = { x: 1, y: 1 };
+    queue.enqueue(p);
+    queue.enqueue(p);
+    expect(queue.length()).eq(1);
   });
 });

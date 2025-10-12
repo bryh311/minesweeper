@@ -236,6 +236,36 @@ class ObserverList {
   }
 }
 
+export class PointQueue {
+  private queue: Point[];
+  private seen: Set<string>;
+
+  constructor() {
+    this.queue = new Array();
+    this.seen = new Set();
+  }
+
+  enqueue(point: Point) {
+    const pointStr = `${point.x}-${point.y}`;
+    if (!this.seen.has(pointStr)) {
+      this.seen.add(pointStr);
+      this.queue.push(point);
+    }
+  }
+
+  dequeue() {
+    return this.queue.shift();
+  }
+
+  length() {
+    return this.queue.length;
+  }
+
+  isEmpty() {
+    return this.length() === 0;
+  }
+}
+
 class CombinedGrid {
   private mineGrid: MineGrid;
   private visibilityGrid: VisibilityGrid;
@@ -275,10 +305,10 @@ class CombinedGrid {
       return;
     }
 
-    const queue = new Array<Point>();
-    queue.push(point);
-    while (queue.length > 0) {
-      const currentPoint = queue.shift()!;
+    const queue = new PointQueue();
+    queue.enqueue(point);
+    while (!queue.isEmpty()) {
+      const currentPoint = queue.dequeue()!;
       if (this.mineGrid.getMineValueAt(currentPoint) === 0) {
         this.enqueueSurroundings(queue, currentPoint);
       }
@@ -289,7 +319,7 @@ class CombinedGrid {
     }
   }
 
-  private enqueueSurroundings(queue: Array<Point>, p: Point) {
+  private enqueueSurroundings(queue: PointQueue, p: Point) {
     const checkInBoundsAndPushBound = this.checkInBoundsAndPush.bind(
       this,
       queue
@@ -304,12 +334,12 @@ class CombinedGrid {
     checkInBoundsAndPushBound({ x: p.x + 1, y: p.y + 1 });
   }
 
-  private checkInBoundsAndPush(queue: Array<Point>, p: Point) {
+  private checkInBoundsAndPush(queue: PointQueue, p: Point) {
     if (
       this.isInBounds(p) &&
       this.visibilityGrid.getVisibilityAt(p) === "HIDDEN"
     ) {
-      queue.push({ x: p.x, y: p.y });
+      queue.enqueue({ x: p.x, y: p.y });
     }
   }
 
