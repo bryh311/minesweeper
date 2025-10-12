@@ -1,11 +1,21 @@
 import type { MineSweeper, Point, TileObserver } from "./minesweeper";
 
-export function init(height: number, width: number, root:HTMLElement, game: MineSweeper) {
+export function init(
+  height: number,
+  width: number,
+  root: HTMLElement,
+  game: MineSweeper
+) {
   buildGrid(height, width, root, game);
   styleRoot(height, width, root);
 }
 
-function buildGrid(height: number, width: number, root: HTMLElement, game: MineSweeper) {
+function buildGrid(
+  height: number,
+  width: number,
+  root: HTMLElement,
+  game: MineSweeper
+) {
   for (let i = 0; i < height; i++) {
     for (let j = 0; j < width; j++) {
       const button = MineButton.createButton(j, i, game);
@@ -23,29 +33,32 @@ function styleRoot(height: number, width: number, root: HTMLElement) {
 class MineButton implements TileObserver {
   button: HTMLButtonElement;
   private game: MineSweeper;
-  private x: number;
-  private y: number;
+  private point: Point;
 
-  private constructor(button: HTMLButtonElement, x: number, y: number, game: MineSweeper) {
+  private constructor(
+    button: HTMLButtonElement,
+    x: number,
+    y: number,
+    game: MineSweeper
+  ) {
     this.button = button;
-    this.x = x;
-    this.y = y;
+    this.point = { x: x, y: y };
     this.button.innerText = "";
-    this.button.id =  `b-${x}-${y}`;
+    this.button.id = `b-${x}-${y}`;
     this.game = game;
 
     this.button.addEventListener("click", (ev: MouseEvent) => {
-      this.game.action(this.x, this.y, "CHECK");
-    })
+      this.game.check(this.point);
+    });
 
     this.button.addEventListener("contextmenu", (ev: MouseEvent) => {
       ev.preventDefault();
-      this.game.action(this.x, this.y, "FLAG");
-    })
+      this.game.flag(this.point);
+    });
 
     this.game.register(this);
   }
-  
+
   static createButton(x: number, y: number, game: MineSweeper) {
     const htmlButton = document.createElement("button");
     const button = new MineButton(htmlButton, x, y, game);
@@ -57,6 +70,6 @@ class MineButton implements TileObserver {
   }
 
   coords(): Point {
-    return {x: this.x, y: this.y};
+    return this.point;
   }
 }
