@@ -52,8 +52,8 @@ class MineGrid {
   }
 
   generateMines(startingPoint: Point) {
-    const xSlack = 3;
-    const ySlack = 3;
+    const xSlack = Math.round(Math.random()) + 1;
+    const ySlack = Math.round(Math.random()) + 1;
 
     for (let i = 0; i < this.numMines; i++) {
       let found = false;

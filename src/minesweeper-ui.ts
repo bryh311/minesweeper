@@ -1,27 +1,53 @@
 import type { MineSweeper, Point, TileObserver } from "./minesweeper";
 
-export function init(
-  height: number,
-  width: number,
-  root: HTMLElement,
-  game: MineSweeper
-) {
-  buildGrid(height, width, root, game);
-  styleRoot(height, width, root);
+export function init(root: HTMLElement, game: MineSweeper) {
+  buildResetButton(root, game);
+  buildGrid(root, game);
 }
 
-function buildGrid(
-  height: number,
-  width: number,
-  root: HTMLElement,
-  game: MineSweeper
-) {
-  for (let i = 0; i < height; i++) {
-    for (let j = 0; j < width; j++) {
+const bgColor: any = {
+  "0": "white",
+  "1": "silver",
+  "2": "gray",
+  "3": "brown",
+  "4": "maroon",
+  "5": "lightblue",
+  "6": "blue",
+  "7": "violet",
+  "8": "purple",
+  "-1": "red",
+  F: "gold",
+  get(tileVal: string): any {
+    if (tileVal in this) {
+      return this[tileVal];
+    }
+
+    return "pink";
+  },
+};
+
+function buildGrid(root: HTMLElement, game: MineSweeper) {
+  const grid = document.createElement("div");
+  grid.id = "grid";
+  styleRoot(game.getHeight(), game.getWidth(), grid);
+
+  for (let i = 0; i < game.getHeight(); i++) {
+    for (let j = 0; j < game.getWidth(); j++) {
       const button = MineButton.createButton(j, i, game);
-      root.appendChild(button.button);
+      grid.appendChild(button.button);
     }
   }
+
+  root.appendChild(grid);
+}
+
+function buildResetButton(root: HTMLElement, game: MineSweeper) {
+  const htmlButton = document.createElement("button");
+  htmlButton.innerText = "Reset";
+  htmlButton.addEventListener("click", () => {
+    game.reset();
+  });
+  root.appendChild(htmlButton);
 }
 
 function styleRoot(height: number, width: number, root: HTMLElement) {
@@ -45,6 +71,7 @@ class MineButton implements TileObserver {
     this.point = { x: x, y: y };
     this.button.innerText = "";
     this.button.id = `b-${x}-${y}`;
+    this.button.className = "mineButton";
     this.game = game;
 
     this.button.addEventListener("click", (ev: MouseEvent) => {
@@ -67,6 +94,7 @@ class MineButton implements TileObserver {
 
   update(tileType: string) {
     this.button.innerText = tileType;
+    this.button.style.backgroundColor = bgColor.get(tileType);
   }
 
   coords(): Point {

@@ -1,4 +1,8 @@
-#app {
+#grid {
   height: calc(10 * 64px);
   width: calc(10 * 64px);
+}
+
+.mineButton {
+  background-color: pink;
 }
