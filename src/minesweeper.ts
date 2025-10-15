@@ -115,6 +115,18 @@ class MineGrid {
     }
   }
 
+  getMineLocations(): Point[] {
+    const ret = [];
+    for (let i = 0; i < this.height; i++) {
+      for (let j = 0; j < this.width; j++) {
+        if (this.grid[i][j] === MINE) {
+          ret.push({ x: j, y: i });
+        }
+      }
+    }
+    return ret;
+  }
+
   reset() {
     this.grid = createGrid(this.width, this.height, 0);
   }
@@ -387,6 +399,13 @@ export class GridLogic {
     this.observers.addObserver(t);
   }
 
+  showAllMines() {
+    const mineLocations = this.mineGrid.getMineLocations();
+    for (let mineLocation of mineLocations) {
+      this.observers.updateObserver(mineLocation, "-1");
+    }
+  }
+
   reset() {
     this.mineGrid.reset();
     this.visibilityGrid.reset();
@@ -441,6 +460,7 @@ export class MineSweeper {
   private checkWinOrLose(location: Point) {
     if (this.grid.isMine(location)) {
       this.gameState = "LOST";
+      this.grid.showAllMines();
       return;
     }
     const totalNonMineTiles = this.grid.getNumTiles() - this.grid.getNumMines();
