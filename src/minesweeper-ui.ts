@@ -76,7 +76,7 @@ class MineButton implements TileObserver {
     this.button.className = "mineButton";
     this.game = game;
 
-    this.button.addEventListener("click", (ev: MouseEvent) => {
+    this.button.addEventListener("click", (_ev: MouseEvent) => {
       this.game.check(this.point);
     });
 
