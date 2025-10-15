@@ -54,6 +54,8 @@ function styleRoot(height: number, width: number, root: HTMLElement) {
   root.style.display = "grid";
   root.style.gridTemplateColumns = `repeat(${width}, 1fr)`;
   root.style.gridTemplateRows = `repeat(${height}, 1fr)`;
+  root.style.width = `calc(25px * ${width})`;
+  root.style.height = `calc(25px * ${height})`;
 }
 
 class MineButton implements TileObserver {
