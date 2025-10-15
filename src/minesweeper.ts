@@ -340,26 +340,18 @@ export class GridLogic {
   }
 
   private enqueueSurroundings(queue: PointQueue, p: Point) {
-    const checkInBoundsAndPushBound = this.checkInBoundsAndPush.bind(
-      this,
-      queue
+    const neighbors = this.getNeighbors(p);
+    const hiddenNeighbors = neighbors.filter(
+      (p) => this.visibilityGrid.getVisibilityAt(p) === "HIDDEN"
     );
-    checkInBoundsAndPushBound({ x: p.x - 1, y: p.y - 1 });
-    checkInBoundsAndPushBound({ x: p.x - 1, y: p.y });
-    checkInBoundsAndPushBound({ x: p.x - 1, y: p.y + 1 });
-    checkInBoundsAndPushBound({ x: p.x, y: p.y - 1 });
-    checkInBoundsAndPushBound({ x: p.x, y: p.y + 1 });
-    checkInBoundsAndPushBound({ x: p.x + 1, y: p.y - 1 });
-    checkInBoundsAndPushBound({ x: p.x + 1, y: p.y });
-    checkInBoundsAndPushBound({ x: p.x + 1, y: p.y + 1 });
+    for (const hiddenNeighbor of hiddenNeighbors) {
+      queue.enqueue(hiddenNeighbor);
+    }
   }
 
-  private checkInBoundsAndPush(queue: PointQueue, p: Point) {
-    if (
-      this.isInBounds(p) &&
-      this.visibilityGrid.getVisibilityAt(p) === "HIDDEN"
-    ) {
-      queue.enqueue({ x: p.x, y: p.y });
+  private checkInBoundsAndPush(arr: Point[], p: Point) {
+    if (this.isInBounds(p)) {
+      arr.push({ x: p.x, y: p.y });
     }
   }
 
@@ -395,6 +387,10 @@ export class GridLogic {
     return this.visibilityGrid.getVisibilityAt(point) === "FLAG";
   }
 
+  isShown(point: Point): boolean {
+    return this.visibilityGrid.getVisibilityAt(point) === "SHOWN";
+  }
+
   register(t: TileObserver) {
     this.observers.addObserver(t);
   }
@@ -404,6 +400,43 @@ export class GridLogic {
     for (let mineLocation of mineLocations) {
       this.observers.updateObserver(mineLocation, "-1");
     }
+  }
+
+  getHiddenNeighborsIfFlagConstraintsMet(point: Point) {
+    const neighbors = this.getNeighbors(point);
+    const numMines = this.mineGrid.getMineValueAt(point);
+    let neighborFlags = 0;
+    for (const neighbor of neighbors) {
+      if (this.visibilityGrid.getVisibilityAt(neighbor) === "FLAG") {
+        neighborFlags++;
+      }
+    }
+    if (neighborFlags !== numMines) {
+      return [];
+    }
+
+    const ret: Point[] = [];
+    for (const neighbor of neighbors) {
+      if (this.visibilityGrid.getVisibilityAt(neighbor) === "HIDDEN") {
+        ret.push(neighbor);
+      }
+    }
+
+    return ret;
+  }
+
+  getNeighbors(p: Point): Point[] {
+    const ret: Point[] = [];
+    const checkInBoundsAndPushBound = this.checkInBoundsAndPush.bind(this, ret);
+    checkInBoundsAndPushBound({ x: p.x - 1, y: p.y - 1 });
+    checkInBoundsAndPushBound({ x: p.x - 1, y: p.y });
+    checkInBoundsAndPushBound({ x: p.x - 1, y: p.y + 1 });
+    checkInBoundsAndPushBound({ x: p.x, y: p.y - 1 });
+    checkInBoundsAndPushBound({ x: p.x, y: p.y + 1 });
+    checkInBoundsAndPushBound({ x: p.x + 1, y: p.y - 1 });
+    checkInBoundsAndPushBound({ x: p.x + 1, y: p.y });
+    checkInBoundsAndPushBound({ x: p.x + 1, y: p.y + 1 });
+    return ret;
   }
 
   reset() {
@@ -452,22 +485,34 @@ export class MineSweeper {
       this.gameState = "ONGOING";
     }
 
-    this.grid.updateVisibility(location);
-
-    this.checkWinOrLose(location);
+    if (this.grid.isShown(location)) {
+      const hiddenNeighbors =
+        this.grid.getHiddenNeighborsIfFlagConstraintsMet(location);
+      for (let hiddenNeighbor of hiddenNeighbors) {
+        this.grid.updateVisibility(hiddenNeighbor);
+        if (this.checkWinOrLose(hiddenNeighbor) === "LOST") {
+          return;
+        }
+      }
+    } else {
+      this.grid.updateVisibility(location);
+      this.checkWinOrLose(location);
+    }
   }
 
-  private checkWinOrLose(location: Point) {
+  private checkWinOrLose(location: Point): GameState {
     if (this.grid.isMine(location)) {
       this.gameState = "LOST";
       this.grid.showAllMines();
-      return;
+    } else {
+      const totalNonMineTiles =
+        this.grid.getNumTiles() - this.grid.getNumMines();
+      const totalShownTiles = this.grid.getShownTiles();
+      if (totalNonMineTiles === totalShownTiles) {
+        this.gameState = "WON";
+      }
     }
-    const totalNonMineTiles = this.grid.getNumTiles() - this.grid.getNumMines();
-    const totalShownTiles = this.grid.getShownTiles();
-    if (totalNonMineTiles === totalShownTiles) {
-      this.gameState = "WON";
-    }
+    return this.gameState;
   }
 
   flag(location: Point) {
