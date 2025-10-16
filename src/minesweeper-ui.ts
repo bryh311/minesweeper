@@ -75,7 +75,7 @@ class MineButton implements TileObserver {
     this.image = image
     this.point = { x: x, y: y };
     //this.button.innerText = "";
-    this.image.src = `./src/resources/tiles/TileUnknown.png`
+    this.image.src = `./resources/tiles/TileUnknown.png`
     this.image.width = 24;
     this.image.height = 24;
     this.image.draggable = false;
@@ -118,7 +118,7 @@ class MineButton implements TileObserver {
 
   update(tileType: string) {
     const newImage = tile.get(tileType);
-    this.image.src = `./src/resources/tiles/${newImage}`
+    this.image.src = `./resources/tiles/${newImage}`
   }
 
   coords(): Point {

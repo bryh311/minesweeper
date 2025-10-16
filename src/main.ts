@@ -1,5 +1,4 @@
-import "./resources/style.css";
-
+import './style.css';
 import { MineSweeper } from "./minesweeper.ts";
 import { init } from "./minesweeper-ui.ts";
 
