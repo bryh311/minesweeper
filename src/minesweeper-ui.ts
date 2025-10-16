@@ -44,6 +44,7 @@ function buildGrid(root: HTMLElement, game: MineSweeper) {
 function buildResetButton(root: HTMLElement, game: MineSweeper) {
   const htmlButton = document.createElement("button");
   htmlButton.innerText = "Reset";
+  htmlButton.id = "reset-button";
   htmlButton.addEventListener("click", () => {
     game.reset();
   });
@@ -54,8 +55,8 @@ function styleRoot(height: number, width: number, root: HTMLElement) {
   root.style.display = "grid";
   root.style.gridTemplateColumns = `repeat(${width}, 1fr)`;
   root.style.gridTemplateRows = `repeat(${height}, 1fr)`;
-  root.style.width = `calc(24x * ${width})`;
-  root.style.height = `calc(24px * ${height})`;
+  root.style.width = `calc(2rem * ${width})`;
+  root.style.height = `calc(2rem * ${height})`;
 }
 
 class MineButton implements TileObserver {
@@ -76,8 +77,8 @@ class MineButton implements TileObserver {
     this.point = { x: x, y: y };
     //this.button.innerText = "";
     this.image.src = `./resources/tiles/TileUnknown.png`
-    this.image.width = 24;
-    this.image.height = 24;
+    this.image.width = 16;
+    this.image.height = 16;
     this.image.draggable = false;
     this.image.className = "tileImage";
     this.button.id = `b-${x}-${y}`;

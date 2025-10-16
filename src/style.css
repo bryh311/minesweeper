@@ -1,8 +1,48 @@
 :root {
-  --tile-width: 24px;
-  --tile-height: 24px;
+  --tile-width: 2rem;
+  --tile-height: 2rem;
   --tile-color: #c4f0f9;
+  --tile-border: #5fcde4;
 }
+
+h1 {
+  font-family:Arial, Helvetica, sans-serif;
+  color: black;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: antiquewhite;
+}
+
+#reset-button {
+  padding: 3px;
+  background-color: var(--tile-color);
+  border-style: outset;
+  border-width: 3px;
+  border-color: var(--tile-border);
+}
+
+#reset-button:active {
+  border-color: var(--tile-color);
+  border-style: inset;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: fit-content;
+  height: fit-content;
+  border-style: ridge;
+  border-width: 3px;
+  background-color: var(--tile-color);
+  padding: 10px;
+  row-gap: 20px;
+}
+
 
 #grid {
   width: fit-content;
@@ -20,4 +60,6 @@
 
 .tileImage {
   user-select: none;
+  width:inherit;
+  height:inherit;
 }
