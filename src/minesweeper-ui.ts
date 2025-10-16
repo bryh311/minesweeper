@@ -5,24 +5,24 @@ export function init(root: HTMLElement, game: MineSweeper) {
   buildGrid(root, game);
 }
 
-const bgColor: any = {
-  "0": "white",
-  "1": "silver",
-  "2": "gray",
-  "3": "brown",
-  "4": "maroon",
-  "5": "lightblue",
-  "6": "blue",
-  "7": "violet",
-  "8": "purple",
-  "-1": "red",
-  F: "gold",
+const tile: any = {
+  "0": "TileEmpty.png",
+  "1": "Tile1.png",
+  "2": "Tile2.png",
+  "3": "Tile3.png",
+  "4": "Tile4.png",
+  "5": "Tile5.png",
+  "6": "Tile6.png",
+  "7": "Tile7.png",
+  "8": "Tile8.png",
+  "-1": "TileMine.png",
+  F: "TileFlag.png",
   get(tileVal: string): any {
     if (tileVal in this) {
       return this[tileVal];
     }
 
-    return "pink";
+    return "TileUnknown.png";
   },
 };
 
@@ -54,24 +54,32 @@ function styleRoot(height: number, width: number, root: HTMLElement) {
   root.style.display = "grid";
   root.style.gridTemplateColumns = `repeat(${width}, 1fr)`;
   root.style.gridTemplateRows = `repeat(${height}, 1fr)`;
-  root.style.width = `calc(25px * ${width})`;
-  root.style.height = `calc(25px * ${height})`;
+  root.style.width = `calc(24x * ${width})`;
+  root.style.height = `calc(24px * ${height})`;
 }
 
 class MineButton implements TileObserver {
   button: HTMLButtonElement;
+  image: HTMLImageElement;
   private game: MineSweeper;
   private point: Point;
 
   private constructor(
     button: HTMLButtonElement,
+    image: HTMLImageElement,
     x: number,
     y: number,
     game: MineSweeper
   ) {
     this.button = button;
+    this.image = image
     this.point = { x: x, y: y };
-    this.button.innerText = "";
+    //this.button.innerText = "";
+    this.image.src = `./src/resources/tiles/TileUnknown.png`
+    this.image.width = 24;
+    this.image.height = 24;
+    this.image.draggable = false;
+    this.image.className = "tileImage";
     this.button.id = `b-${x}-${y}`;
     this.button.className = "mineButton";
     this.game = game;
@@ -79,6 +87,18 @@ class MineButton implements TileObserver {
     this.button.addEventListener("click", (_ev: MouseEvent) => {
       this.game.check(this.point);
     });
+
+    this.button.addEventListener("mousedown", (_ev: MouseEvent) => {
+      this.game.handleButtonPressed(this.point);
+    })
+
+    this.button.addEventListener("mouseleave", () => {
+      this.game.handleButtonReleased(this.point);
+    })
+
+    this.button.addEventListener("mouseup", () => {
+      this.game.handleButtonReleased(this.point);
+    })
 
     this.button.addEventListener("contextmenu", (ev: MouseEvent) => {
       ev.preventDefault();
@@ -90,13 +110,15 @@ class MineButton implements TileObserver {
 
   static createButton(x: number, y: number, game: MineSweeper) {
     const htmlButton = document.createElement("button");
-    const button = new MineButton(htmlButton, x, y, game);
+    let img = document.createElement("img");
+    img = htmlButton.appendChild(img);
+    const button = new MineButton(htmlButton, img, x, y, game);
     return button;
   }
 
   update(tileType: string) {
-    this.button.innerText = tileType;
-    this.button.style.backgroundColor = bgColor.get(tileType);
+    const newImage = tile.get(tileType);
+    this.image.src = `./src/resources/tiles/${newImage}`
   }
 
   coords(): Point {

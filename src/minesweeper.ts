@@ -311,6 +311,10 @@ export class GridLogic {
     return this.visibilityGrid.getShownTiles();
   }
 
+  updateObserver(p: Point, args: string) {
+    this.observers.updateObserver(p, args);
+  }
+
   constructor(width: number, height: number, numMines: number) {
     this.mineGrid = new MineGrid(width, height, numMines);
     this.visibilityGrid = new VisibilityGrid(width, height, numMines);
@@ -391,6 +395,10 @@ export class GridLogic {
     return this.visibilityGrid.getVisibilityAt(point) === "SHOWN";
   }
 
+  isHidden(point: Point): boolean {
+    return this.visibilityGrid.getVisibilityAt(point) === "HIDDEN";
+  }
+
   register(t: TileObserver) {
     this.observers.addObserver(t);
   }
@@ -398,6 +406,7 @@ export class GridLogic {
   showAllMines() {
     const mineLocations = this.mineGrid.getMineLocations();
     for (let mineLocation of mineLocations) {
+      this.visibilityGrid.setVisibilityAt(mineLocation, "SHOWN");
       this.observers.updateObserver(mineLocation, "-1");
     }
   }
@@ -411,17 +420,21 @@ export class GridLogic {
         neighborFlags++;
       }
     }
-    if (neighborFlags !== numMines) {
+    if (neighborFlags < numMines) {
       return [];
     }
 
+    return this.getHiddenNeighbors(point);
+  }
+
+  getHiddenNeighbors(p :Point) {
+    const neighbors = this.getNeighbors(p);
     const ret: Point[] = [];
     for (const neighbor of neighbors) {
       if (this.visibilityGrid.getVisibilityAt(neighbor) === "HIDDEN") {
         ret.push(neighbor);
       }
     }
-
     return ret;
   }
 
@@ -516,10 +529,34 @@ export class MineSweeper {
   }
 
   flag(location: Point) {
-    if (this.gameState === "LOST") {
+    if (this.gameState === "LOST" || this.gameState === "WON") {
       return;
     }
     this.grid.toggleFlagAndSendSignal(location);
+  }
+
+  handleButtonPressed(location: Point) {
+    if (this.grid.isShown(location)) {
+      const hiddenNeighbors = this.grid.getHiddenNeighbors(location);
+      for (const neighbor of hiddenNeighbors) {
+        this.grid.updateObserver(neighbor, "0");
+      }
+    }
+    else if (this.grid.isHidden(location) && (this.gameState === "ONGOING" || this.gameState === "NOT_STARTED")) {
+      this.grid.updateObserver(location, "0");
+    }
+  }
+
+  handleButtonReleased(location: Point) {
+    if (this.grid.isShown(location)) {
+      const hiddenNeighbors = this.grid.getHiddenNeighbors(location);
+      for (const neighbor of hiddenNeighbors) {
+        this.grid.updateObserver(neighbor, "");
+      }
+    }
+    else if (this.grid.isHidden(location)) {
+      this.grid.updateObserver(location, "");
+    }
   }
 
   register(t: TileObserver) {

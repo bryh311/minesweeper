@@ -1,8 +1,23 @@
+:root {
+  --tile-width: 24px;
+  --tile-height: 24px;
+  --tile-color: #c4f0f9;
+}
+
 #grid {
-  height: calc(10 * 64px);
-  width: calc(10 * 64px);
+  width: fit-content;
+  height: fit-content;
+  border-color: var(--tile-color);
+  border-width: 3px;
+  border-style:ridge;
 }
 
 .mineButton {
-  background-color: pink;
+  all: unset;
+  width: var(--tile-width);
+  height: var(--tile-height);
+}
+
+.tileImage {
+  user-select: none;
 }
